@@ -99,3 +99,30 @@ func GenerateService(spec rpc.ServiceSpec, outputDir string) error {
 
 	return nil
 }
+
+func GenerateResource(spec rpc.ResourceSpec, outputDir string) error {
+	fileName := fmt.Sprintf("%sResource.gd", spec.Name)
+	filePath := fmt.Sprintf("%s/%s", outputDir, fileName)
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	s := strings.Builder{}
+	s.WriteString("extends RpcResource")
+	s.WriteString("\n\n")
+	s.WriteString(fmt.Sprintf("class_name %sResource", spec.Name))
+	s.WriteString("\n\n")
+
+	for _, field := range spec.Fields {
+		s.WriteString(fmt.Sprintf("var %s: %s\n", field.Name, field.Type))
+	}
+
+	_, err = file.WriteString(s.String())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
