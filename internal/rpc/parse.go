@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	DocTagService = "@rpc:service"
+	DocTagService  = "@rpc:service"
+	DocTagResource = "@rpc:resource"
 )
 
 func ParseDir(path string) (RPCSpec, error) {
@@ -40,6 +41,10 @@ func ParseDir(path string) (RPCSpec, error) {
 						return strings.Contains(c.Text, DocTagService)
 					})
 
+					isResource := slices.ContainsFunc(genDecl.Doc.List, func(c *ast.Comment) bool {
+						return strings.Contains(c.Text, DocTagResource)
+					})
+
 					if isService {
 						interfaceType, ok := typeSpec.Type.(*ast.InterfaceType)
 						if !ok {
@@ -53,6 +58,21 @@ func ParseDir(path string) (RPCSpec, error) {
 						}
 
 						rpcSpec.Services = append(rpcSpec.Services, *serviceSpec)
+					}
+
+					if isResource {
+						structType, ok := typeSpec.Type.(*ast.StructType)
+						if !ok {
+							continue
+						}
+
+						resourceSpec := &ResourceSpec{Name: typeSpec.Name.Name}
+						resourceSpec, err = resourceSpec.AddFields(typeSpec, structType)
+						if err != nil {
+							return rpcSpec, err
+						}
+
+						rpcSpec.Resources = append(rpcSpec.Resources, *resourceSpec)
 					}
 				}
 			}
