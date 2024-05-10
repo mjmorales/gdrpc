@@ -2,5 +2,4 @@
 .history
 
 # Example Godot project
-examples/tictactoe/*Service.gd
-examples/tictactoe/rpc.json
+examples/tictactoe/gdrpc

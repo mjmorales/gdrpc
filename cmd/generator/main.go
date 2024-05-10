@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/mjmorales/gdrpc/internal/rpc"
+	"github.com/mjmorales/gdrpc/internal/rpc/gdscript"
 )
 
 const (
@@ -15,12 +16,12 @@ const (
 )
 
 func generateRpcSpec(dirPath, outputPath string) error {
-	specs, err := rpc.ParseDir(dirPath)
+	spec, err := rpc.ParseDir(dirPath)
 	if err != nil {
 		return fmt.Errorf("error parsing directory: %w", err)
 	}
 
-	data, err := json.MarshalIndent(specs, "", "    ")
+	data, err := json.MarshalIndent(spec, "", "    ")
 	if err != nil {
 		return fmt.Errorf("error marshalling JSON: %w", err)
 	}
@@ -33,20 +34,20 @@ func generateRpcSpec(dirPath, outputPath string) error {
 }
 
 func generateGdscript(specPath, outputPath string) error {
-	rpc.GenerateSuperClasses(outputPath)
+	gdscript.GenerateSuperClasses(outputPath)
 
-	var specs []rpc.RPCSpec
+	var spec rpc.RPCSpec
 	jsonFile, err := os.Open(specPath)
 	if err != nil {
 		return fmt.Errorf("error opening file: %w", err)
 	}
 
-	if err := json.NewDecoder(jsonFile).Decode(&specs); err != nil {
+	if err := json.NewDecoder(jsonFile).Decode(&spec); err != nil {
 		return fmt.Errorf("error decoding JSON: %w", err)
 	}
 
-	for _, spec := range specs {
-		err = rpc.GenerateGDScript(&spec, outputPath)
+	for _, service := range spec.Services {
+		err = gdscript.GenerateService(service, outputPath)
 		if err != nil {
 			return fmt.Errorf("error generating GDScript: %w", err)
 		}
