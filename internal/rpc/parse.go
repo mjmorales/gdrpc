@@ -13,25 +13,15 @@ const (
 	DocTagService = "@rpc:service"
 )
 
-type MethodSpec struct {
-	Name       string      `json:"name"`
-	Parameters []Parameter `json:"parameters"`
-	Returns    []string    `json:"returns"`
-}
+func ParseDir(path string) (RPCSpec, error) {
+	rpcSpec := RPCSpec{}
 
-type ServiceSpec struct {
-	Name    string       `json:"service"`
-	Methods []MethodSpec `json:"methods"`
-}
-
-func ParseDir(path string) ([]ServiceSpec, error) {
 	fset := token.NewFileSet()
 	pkgs, err := parser.ParseDir(fset, path, nil, parser.ParseComments)
 	if err != nil {
-		return nil, err
+		return rpcSpec, err
 	}
 
-	var specs []ServiceSpec
 	for _, pkg := range pkgs {
 		for _, file := range pkg.Files {
 			for _, decl := range file.Decls {
@@ -46,39 +36,30 @@ func ParseDir(path string) ([]ServiceSpec, error) {
 						continue
 					}
 
-					interfaceType, ok := typeSpec.Type.(*ast.InterfaceType)
-					if !ok {
-						continue
-					}
-
 					isService := slices.ContainsFunc(genDecl.Doc.List, func(c *ast.Comment) bool {
 						return strings.Contains(c.Text, DocTagService)
 					})
 
-					if !isService {
-						continue
-					}
-
-					service := ServiceSpec{Name: typeSpec.Name.Name}
-					for _, method := range interfaceType.Methods.List {
-						methodSpec := MethodSpec{Name: method.Names[0].Name}
-						funcType, ok := method.Type.(*ast.FuncType)
+					if isService {
+						interfaceType, ok := typeSpec.Type.(*ast.InterfaceType)
 						if !ok {
 							continue
 						}
 
-						methodSpec.Parameters = ParseParameters(funcType.Params)
-						methodSpec.Returns = ParseResults(funcType.Results)
-						service.Methods = append(service.Methods, methodSpec)
-					}
-					if len(service.Methods) > 0 {
-						specs = append(specs, service)
+						serviceSpec := &ServiceSpec{Name: typeSpec.Name.Name}
+						serviceSpec, err = serviceSpec.AddMethod(typeSpec, interfaceType)
+						if err != nil {
+							return rpcSpec, err
+						}
+
+						rpcSpec.Services = append(rpcSpec.Services, *serviceSpec)
 					}
 				}
 			}
 		}
 	}
-	return specs, nil
+
+	return rpcSpec, nil
 }
 
 func ParseParameters(fields *ast.FieldList) []Parameter {

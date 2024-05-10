@@ -1,5 +1,6 @@
 #!/bin/bash
 
-go run cmd/generator/main.go --path examples/tictactoe --output examples/tictactoe/rpc.json --type=0
-go run cmd/generator/main.go --path examples/tictactoe/rpc.json --output examples/tictactoe --type=1
+mkdir examples/tictactoe/gdrpc
+go run cmd/generator/main.go --path examples/tictactoe --output examples/tictactoe/gdrpc/rpc.json --type=0
+go run cmd/generator/main.go --path examples/tictactoe/gdrpc/rpc.json --output examples/tictactoe/gdrpc --type=1
 
