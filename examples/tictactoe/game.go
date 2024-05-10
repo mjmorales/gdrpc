@@ -10,7 +10,7 @@ type board [3][3]*symbol
 // @rpc:resource
 type Player struct {
 	Name         string `json:"name"`
-	Symbol       symbol `json:"symbol"`
+	Symbol       symbol `json:"symbol" rpcType:"string"`
 	privateValue int
 }
 

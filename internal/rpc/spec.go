@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"go/ast"
 	"os"
+	"reflect"
 )
 
 type Parameter struct {
@@ -27,15 +28,21 @@ type ResourceSpec struct {
 	Fields []Field `json:"fields"`
 }
 
-func (s *ResourceSpec) AddFields(typeSpec *ast.TypeSpec, interfaceType *ast.StructType) (*ResourceSpec, error) {
-	for _, field := range interfaceType.Fields.List {
+func (s *ResourceSpec) AddFields(typeSpec *ast.TypeSpec, structType *ast.StructType) (*ResourceSpec, error) {
+	for _, field := range structType.Fields.List {
 		// Skip unexported fields (lowercase)
 		if field.Names[0].Name[0] < 65 || field.Names[0].Name[0] > 90 {
 			continue
 		}
 
+		tag := reflect.StructTag(field.Tag.Value)
+		typeName, tagExists := tag.Lookup("rpcType")
+		if !tagExists {
+			typeName = field.Type.(*ast.Ident).Name
+		}
+
 		fieldSpec := Field{Name: field.Names[0].Name}
-		fieldSpec.Type = field.Type.(*ast.Ident).Name
+		fieldSpec.Type = typeName
 		s.Fields = append(s.Fields, fieldSpec)
 	}
 
