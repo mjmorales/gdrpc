@@ -27,6 +27,21 @@ type ResourceSpec struct {
 	Fields []Field `json:"fields"`
 }
 
+func (s *ResourceSpec) AddFields(typeSpec *ast.TypeSpec, interfaceType *ast.StructType) (*ResourceSpec, error) {
+	for _, field := range interfaceType.Fields.List {
+		// Skip unexported fields (lowercase)
+		if field.Names[0].Name[0] < 65 || field.Names[0].Name[0] > 90 {
+			continue
+		}
+
+		fieldSpec := Field{Name: field.Names[0].Name}
+		fieldSpec.Type = field.Type.(*ast.Ident).Name
+		s.Fields = append(s.Fields, fieldSpec)
+	}
+
+	return s, nil
+}
+
 type ServiceSpec struct {
 	Name    string       `json:"service"`
 	Methods []MethodSpec `json:"methods"`
@@ -49,8 +64,8 @@ func (s *ServiceSpec) AddMethod(typeSpec *ast.TypeSpec, interfaceType *ast.Inter
 }
 
 type RPCSpec struct {
-	Services   []ServiceSpec  `json:"services"`
-	Ressources []ResourceSpec `json:"resources"`
+	Services  []ServiceSpec  `json:"services"`
+	Resources []ResourceSpec `json:"resources"`
 }
 
 func ReadSpec(filename string) (*RPCSpec, error) {

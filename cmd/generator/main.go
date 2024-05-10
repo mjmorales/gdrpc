@@ -53,6 +53,13 @@ func generateGdscript(specPath, outputPath string) error {
 		}
 	}
 
+	for _, resource := range spec.Resources {
+		err = gdscript.GenerateResource(resource, outputPath)
+		if err != nil {
+			return fmt.Errorf("error generating GDScript: %w", err)
+		}
+	}
+
 	return nil
 }
 
